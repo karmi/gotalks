@@ -1,0 +1,257 @@
+Go Forth and interface{}
+
+Karel Minařík
+
+http://karmi.cz
+@karmiq
+
+
+* $ whoami
+
+- Web Designer/Developer since... Y2K
+- Ruby/Rails since ~ 2007
+- Go since ~ 6 months
+
+- Elasticsearch since 2010
+- Elastic.co since 2012
+
+- Ruby client, Rails integrations, internal applications
+
+
+* Go and Elastic.co
+
+.background images/go-at-elastic.png
+
+- Beats
+- APM Server
+- Various Elastic Cloud services
+- Internal Tools
+
+*Application* *Performance* *Metrics* for `#golang`
+.link https://github.com/elastic/apm-agent-go github.com/elastic/apm-agent-go
+
+* ~
+
+Source code for this talk:
+.link https://github.com/karmi/gotalks/tree/master/2018/interface/code
+
+
+* Why are Go interfaces interesting?
+
+* —
+
+“Go's interfaces — static, checked at compile time, dynamic when asked for – are, for me, the most exciting part of Go from a language design point of view.
+
+If I could export one feature of Go into other languages, it would be interfaces.”
+
+~ [[https://research.swtch.com/interfaces][Russ Cox]]
+
+* Interfaces allow a certain level of dynamism in a strict language
+
+- "Duck typing"
+- "Polymorphism"
+- ...
+
+There are two ways how to look at interfaces:
+
+1. The `interface{}` *type*
+
+    type Speaker interface{}
+
+2. The *empty* `interface{}`
+
+    var a interface{}
+
+* The empty interface{}
+
+- Allows to handle values dynamically
+- Used every day — `fmt.Println()`
+
+    $ go doc fmt Println
+    func Println(a ...interface{}) (n int, err error)
+    # -> Fprintln() -> doPrintln() -> printArg()
+
+    $ godoc --src fmt printArg
+    # ...
+    switch f := arg.(type) {
+    case bool:
+        p.fmtBool(f, verb)
+    # ...
+    case string:
+        p.fmtString(f, verb)
+    }
+
+    $ go doc fmt.Stringer
+    type Stringer interface {
+      String() string
+    }
+
+* The interface{} type
+
+* The interface{} type
+
+.link https://medium.com/@matryer/golang-advent-calendar-day-one-duck-typing-a513aaed544d Mat Ryer, _Duck_ _Typing_ _in_ _Go_
+
+.code code/01_interface_speaker.go /START1/,/END1/
+.play code/01_interface_speaker.go /START2/,/END2/
+
+
+* The interface{} type
+
+.code code/01_interface_speaker.go /START1/,/END1/
+
+_n.b._
+
+⇢ *Implicit* satisfaction (no `implements` clause)
+
+: The _implicit_ interface satisfaction (no `implements` clause) has two important consequences:
+: 1. _Your_ type can satisfy external type (eg. `io.Reader`)
+: 2. External type can satisfy _your_ type — just by exporting a method
+
+
+* The interface{} type
+
+.code code/02_interface_speaker_robot.go /START1/,/END1/
+.play code/02_interface_speaker_robot.go /START2/,/END2/
+
+
+* The interface{} type
+
+.code code/03_interface_say_loud.go /START1/,/END1/
+.play code/03_interface_say_loud.go /START2/,/END2/
+
+_n.b._
+
+⇢ The `SayLoud()` function accepts an interface
+
+
+* The interface{} type
+
+.code code/04_interface_say_to_stdout.go /START1/,/END1/
+.code code/04_interface_say_to_stdout.go /START2/,/END2/
+.play code/04_interface_say_to_stdout.go /START3/,/END3/
+
+
+* The interface{} type
+
+.play code/05_interface_say_to_dst.go /START3/,/END3/
+
+
+* The interface{} type
+
+.play code/06_interface_say_audio.go /START3/,/END3/
+
+Say it loud :)
+
+
+* The interface{} type
+
+.code code/07_interface_say_reader.go /START1/,/END1/
+.code code/07_interface_say_reader.go /START2/,/END2/
+.play code/07_interface_say_reader.go /START3/,/END3/
+
+
+* io.Reader & io.Writer
+
+
+* Interface as an abstraction
+
+  $ go doc io.Reader
+
+  type Reader interface {
+    Read(p []byte) (n int, err error)
+  }
+
+  $ go doc io.Writer
+
+  type Writer interface {
+    Write(p []byte) (n int, err error)
+  }
+
+  $ go doc io.Copy
+
+  func Copy(dst Writer, src Reader) (written int64, err error)
+
+
+* —
+
+“The io.Reader interface is very simple; Read reads data into the supplied buffer, and returns to the caller the number of bytes that were read, and any error encountered during read. It seems simple but it’s very powerful.”
+
+“Because io.Reader‘s deal with anything that can be expressed as a stream of bytes, we can construct readers over just about anything; a constant string, a byte array, standard in, a network stream, a gzip’d tar file, the standard out of a command being executed remotely via ssh.”
+
+~ [[https://dave.cheney.net/2016/08/20/solid-go-design][Dave Cheney]]
+
+* –
+
+“If you’re designing a package or utility (even if it’s an internal thing that nobody will ever see) rather than taking in strings or `[]byte` slices, consider taking in an `io.Reader` if you can for data sources. Because suddenly, your code will work with every type that implements `io.Reader`.”
+
+— [[https://medium.com/@matryer/golang-advent-calendar-day-seventeen-io-reader-in-depth-6f744bb4320b][Mat Ryer]]
+
+
+
+* Save a document
+
+    // Save writes the contents of doc to the file f.
+    func Save(f *os.File, doc *Document) error
+
+vs
+
+    // Save writes the contents of doc to the supplied Writer.
+    func Save(w io.Writer, doc *Document) error
+
+“Because Save operates directly with files on disk, it is unpleasant to test. (…) `*os.File` also defines a lot of methods which are not relevant to `Save` (…)”
+
+~ [[https://dave.cheney.net/2016/08/20/solid-go-design][Dave Cheney]]
+
+
+* Save a document
+
+.code code/08_save_document.go /START1/,/END1/
+.play code/08_save_document.go /START2/,/END2/
+
+
+* Save a document to a file
+
+.play code/09_save_document_to_file.go /START2/,/END2/
+
+
+* Save a document to multiple destinations
+
+.play code/10_save_document_to_multiple_dst.go /START2/,/END2/
+
+* Save a document to /dev/null
+
+.play code/11_save_document_to_discard.go /START2/,/END2/
+
+
+* Save a document and verify SHA256 digest (I)
+
+.code code/12_save_document_and_verify_digest.go /START1/,/END1/
+
+
+* Save a document and verify SHA256 digest (II)
+
+.play -edit code/12_save_document_and_verify_digest.go /START2/,/END2/
+
+
+* Save a document and verify the content size (I)
+
+.code code/13_save_document_and_verify_size.go /START1/,/END1/
+
+
+* Save a document and verify the content size (II)
+
+.play -edit code/13_save_document_and_verify_size.go /START2/,/END2/
+
+
+* Mock a writer to always fail
+
+.code code/14_save_document_and_mock.go /START1/,/END1/
+.play -edit code/14_save_document_and_mock.go /START2/,/END2/
+
+
+* Conclusions
+
+- Interfaces allow to abstract away behaviour
+- io.Reader/Writer allows effective and efficient stream reading and writing
+- Implicit satisfaction allows interoperability, even between unrelated packages (eg. `Stringer`)
