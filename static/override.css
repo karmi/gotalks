@@ -1,0 +1,84 @@
+body {
+	background: -webkit-radial-gradient(#595959, #202020) !important;
+	background: -webkit-gradient(radial, 50% 50%, 0, 50% 50%, 500, from(#595959), to(#202020)) !important;
+}
+
+.slides > article {
+	color: #fff !important;
+	background-color: #040404 !important;
+}
+
+.slides > article.background {
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.slides > article * {
+	color: #fff !important;
+}
+.slides > article input,
+.slides > article button {
+	color: #000 !important;
+}
+
+.slides > article h2 {
+	position: absolute;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.slides > article p.link {
+	margin-left: 0;
+}
+.slides > article p.link:before {
+	content: "↪";
+	margin-right: 0.25em;
+}
+.slides > article p.link a:hover {
+	text-decoration: underline;
+}
+
+.slides > article .code {
+	color: #fff;
+	background: #666;
+	padding: 1em;
+	border: none;
+	border-radius: 0.25em;
+}
+
+.slides > article .code pre b {
+	color: #defaff !important
+}
+
+.slides > article ul {
+	margin-bottom: 40px !important;
+}
+
+div.output {
+	width: auto;
+}
+
+div.output pre span {
+	display: block;
+}
+
+div.output .system,
+div.output .exit {
+	color: #ccc !important;
+}
+div.output .stderr,
+div.output .error {
+	color: #fff !important;
+	background: #fc004c;
+	border-radius: 0.25em;
+	display: inline-block;
+	white-space: pre-wrap;
+}
+
+.slides > article .pagenumber {
+	color: #333 !important;
+	font-size: 50% !important;
+	left: 11px;
+	right: auto;
+}
