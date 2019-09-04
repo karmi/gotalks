@@ -1,0 +1,21 @@
+package esapi
+
+func newClusterHealthFunc(t Transport) ClusterHealth { // HL
+	return func(o ...func(*ClusterHealthRequest)) (*Response, error) {
+		var r = ClusterHealthRequest{} // HL
+		for _, f := range o {
+			f(&r)
+		}
+		return r.Do(t) // HL
+	}
+}
+
+func New(t Transport) *API { // HL
+	return &API{
+		Cluster: &Cluster{
+			Health: newClusterHealthFunc(t), // HL
+		},
+
+		// ...
+	}
+}

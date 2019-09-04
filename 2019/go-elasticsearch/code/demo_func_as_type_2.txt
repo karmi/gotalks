@@ -1,0 +1,22 @@
+package esapi
+
+type ClusterHealthRequest struct { // HL
+	Context context.Context
+
+	Level         string
+	Local         bool
+	MasterTimeout time.Duration
+	// ...
+
+	Pretty bool
+}
+
+func (r ClusterHealthRequest) Do(ctx context.Context, transport Transport) (*Response, error) { // HL
+	// ...
+	req, _ := newRequest(method, path.String(), nil)
+	// ...
+	res, err := transport.Perform(req)
+	// ...
+	response := Response{ ... }
+	return &response, nil
+}

@@ -1,0 +1,11 @@
+package esapi
+
+type ClusterHealth func(o ...func(*ClusterHealthRequest)) (*Response, error) // HL
+
+func (f ClusterHealth) WithLevel(v string) func(*ClusterHealthRequest) {
+	return func(r *ClusterHealthRequest) {
+		r.Level = v
+	}
+}
+
+// WithContext(), WithMasterTimeout(), WithIndex(), WithWaitForActiveShards(), ...

@@ -1,0 +1,189 @@
+The Go Client for Elasticsearch
+
+Karel Minařík
+
+http://karmi.cz
+@karmiq
+
+
+* $ whoami
+
+- Web Designer/Developer since... Y2K
+- Ruby/Rails since ~ 2007
+- Golang since last year
+
+- Using Elasticsearch since 2010
+- Part of Elastic.co since 2012
+
+- Responsibilities: Ruby client, Rails integrations, internal applications, …
+- … and also, the official Go client
+
+
+* Go and Elastic.co
+
+.background images/go-at-elastic.png
+
+- Beats
+- APM Server
+- Various Elastic Cloud services
+- Internal Tools
+
+*Application* *Performance* *Metrics*
+.link https://github.com/elastic/apm-agent-go github.com/elastic/apm-agent-go
+
+* ~
+
+Source code for this talk:
+.link https://github.com/karmi/gotalks/tree/master/2019/go-elasticsearch
+
+* Ruby → Golang ﹦ ⁈
+
+- Leverage experience with the Ruby client
+- Avoid following Go idioms blindly
+- Be creative with Go features
+
+“Writing good code has much in common with writing good English”
+
+~ [[http://bit.ly/2ltnEti][Kernighan/Pike, The Practice of Programming]]
+
+* Goals for an official Elasticsearch client
+
+1. Be consistent with other official clients
+2. Be idiomatic for language developers
+
+Contradicting goals? Indeed… :)
+
+* —
+
+.link https://speakerdeck.com/karmi/all-about-elasticsearch-language-clients-elasticon-2015?slide=5  “All About Elasticsearch Language Clients”, *Elastic{ON}* *2015*
+
+- An Elasticsearch client is not just a wrapper around HTTP and JSON
+- Subtleties like request retrying, discovering nodes, logging, ...
+- More then 120 open source APIs, nearly 300 APIs when counting X-Pack
+- [[https://github.com/elastic/elasticsearch/tree/master/rest-api-spec/src/main/resources/rest-api-spec/api][Specification in JSON]] for the Elasticsearch's HTTP APIs
+- [[https://github.com/elastic/elasticsearch/tree/master/rest-api-spec/src/main/resources/rest-api-spec/test#test-suite][Test suite in YAML]] for the Elasticsearch's HTTP APIs
+- “*Nobody* should have a reason to *not* use the official client.”
+
+* Divide and Conquer
+
+- Start with a limited prototype in a private repository
+- Not a "secret project" — `@olivere` invited as collaborator
+- Focused feedback & discussion
+- Only handful of APIs, no fancy features, no code generation
+
+Goals:
+
+- Verify user experience of the API
+- Verify performance (extensive benchmarking)
+
+* Package structure and naming
+
+1. `elastic/go-elasticsearch`
+2. `elastic/go-elasticsearch/esapi`
+3. `elastic/go-elasticsearch/estransport`
+4. `elastic/go-elasticsearch/esutil`
+
+- Follow the common design of official clients, eg. Ruby or Python
+- Better code organization (`godoc`)
+- Don't steal variable names from the user (`es`) and don't use generic names (`api`)
+- Allow independent usage of packages (eg. only the API package)
+
+    type Interface interface {
+      Perform(*http.Request) (*http.Response, error)
+    }
+
+* Usage: Initialization
+
+.code code/demo_client_01.go /START1/,/END1/
+.code code/demo_client_01.go /START2/,/END2/
+.code code/demo_client_01.go /START3/,/END3/
+
+* Usage: Calling APIs
+
+    es, _ := elasticsearch.NewDefaultClient()
+
+.play code/demo_client_01.go /START4/,/END4/
+
+- Namespaces
+- Functional options
+- `esapi.Response` is a `fmt.Stringer`
+- `res.Body` is an `io.ReadCloser` — *no* *decoding* of response body
+
+* Implementation: Methods
+
+.code code/demo_func_as_type_1.txt
+
+* Implementation: Request Structs
+
+.code code/demo_func_as_type_2.txt
+
+* Implementation: Constructors
+
+.code code/demo_func_as_type_3.txt
+
+.caption [[https://github.com/elastic/go-elasticsearch/blob/master/esapi/api._.go][https://github.com/elastic/go-elasticsearch/blob/master/esapi/api._.go]]
+
+* Code Generation: API
+
+.code code/cluster.health.json
+
+.caption [[https://github.com/elastic/elasticsearch/blob/master/rest-api-spec][https://github.com/elastic/elasticsearch/blob/master/rest-api-spec]]
+
+* Code Generation: Tests
+
+.code code/cluster.health.yaml
+
+.caption [[https://github.com/elastic/elasticsearch/blob/master/rest-api-spec][https://github.com/elastic/elasticsearch/blob/master/rest-api-spec]]
+
+* Continuous Integration
+
+.image images/jenkins-go-elasticsearch.png
+
+* Documentation
+
+    $ go doc go-elasticsearch/esapi ClusterHealth
+
+.iframe https://godoc.org/github.com/elastic/go-elasticsearch/esapi#ClusterHealth 500 1000
+
+* Usage: Method arguments and request bodies
+
+    type Index func(index string, body io.Reader, o ...func(*IndexRequest)) (*Response, error)
+
+.play code/demo_client_02.go /START1/,/END1/
+
+* Usage: Request Structs
+
+.code code/demo_client_03.go /START1/,/END1/
+.play code/demo_client_03.go /START2/,/END2/
+
+* Usage: JSON Decoding
+
+.code code/demo_client_04.go /START1/,/END1/
+.code code/demo_client_04.go /START2/,/END2/
+.play code/demo_client_04.go /START3/,/END3/
+
+* Usage: JSON Encoding
+
+.code code/demo_client_05.go /START1/,/END1/
+.code code/demo_client_05.go /START2/,/END2/
+.play code/demo_client_05.go /START3/,/END3/
+
+
+* Examples! Examples! Examples!
+
+.image images/ballmer.gif
+
+.link https://github.com/elastic/go-elasticsearch/tree/master/_examples
+
+* Examples! Examples! Examples!
+
+.link https://github.com/elastic/go-elasticsearch/tree/master/_examples
+
+- Client configuration and transport customization
+- Custom HTTP Transport (`valyala/fasthttp`)
+- Encoding (`encoding/json`, `mailru/easyjson`, `tidwall/gjson`)
+- Extending the client APIs
+- Logging
+- Bulk indexing
+- Instrumentation (OpenCensus, Elastic APM)
+- Complete application: XKCD Search (CLI, UI, API) | [[https://xkcd-golang.app.elstc.co][https://xkcd-golang.app.elstc.co]]
