@@ -21,6 +21,10 @@ body {
 	color: #000 !important;
 }
 
+.slides > article h3 {
+	margin-bottom: 20px;
+}
+
 .slides > article h2 {
 	position: absolute;
   top: 50%;
@@ -38,6 +42,13 @@ body {
 .slides > article p.link a:hover {
 	text-decoration: underline;
 }
+.slides > article a:hover {
+	text-decoration: underline;
+}
+
+article > .image, article > .video {
+	text-align: left;
+}
 
 .slides > article .code {
 	color: #fff;
@@ -45,6 +56,12 @@ body {
 	padding: 1em;
 	border: none;
 	border-radius: 0.25em;
+	overflow: auto !important;
+	max-height: 80%;
+}
+
+.slides > article .code pre {
+	overflow: auto !important;
 }
 
 .slides > article .code pre b {
@@ -71,6 +88,7 @@ div.output .stderr,
 div.output .error {
 	color: #fff !important;
 	background: #fc004c;
+	padding: 0.25em;
 	border-radius: 0.25em;
 	display: inline-block;
 	white-space: pre-wrap;
