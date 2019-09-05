@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<!-- saved from url=(0068)http://localhost:3999/2019/go-elasticsearch/go-elasticsearch.slide#1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>The Go Client for Elasticsearch</title>
+
+    <link rel="stylesheet" type="text/css" href="./go-elasticsearch-files/override.css">
+    <script>
+      var notesEnabled =  false ;
+    </script>
+    <script src="./go-elasticsearch-files/slides.js"></script>
+
+
+
+    <script>
+
+      if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+        var _gaq = _gaq || [];
+        _gaq.push(["_setAccount", "UA-11222381-6"]);
+        _gaq.push(["b._setAccount", "UA-49880327-6"]);
+        window.trackPageview = function() {
+          _gaq.push(["_trackPageview", location.pathname+location.hash]);
+          _gaq.push(["b._trackPageview", location.pathname+location.hash]);
+        };
+        window.trackPageview();
+        window.trackEvent = function(category, action, opt_label, opt_value, opt_noninteraction) {
+          _gaq.push(["_trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+          _gaq.push(["b._trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+        };
+      }
+    </script>
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"></head>
+
+  <body style="display: none" class="loaded">
+
+    <section class="slides layout-widescreen" style="transform: scale(0.998667);">
+
+      <article class="current">
+        <h1>The Go Client for Elasticsearch</h1>
+
+
+
+          <div class="presenter">
+
+
+  <p>
+    Karel Minařík
+  </p>
+
+
+          </div>
+
+          <div class="presenter">
+
+          </div>
+
+          <div class="presenter">
+
+
+  <p>
+
+  </p>
+
+
+          </div>
+
+      </article>
+
+
+
+      <article class="next">
+
+        <h3>$ whoami</h3>
+
+  <ul>
+
+    <li>Web Designer/Developer since... Y2K</li>
+
+    <li>Ruby/Rails since ~ 2007</li>
+
+    <li>Golang since last year</li>
+
+  </ul>
+
+  <ul>
+
+    <li>Using Elasticsearch since 2010</li>
+
+    <li>Part of Elastic.co since 2012</li>
+
+  </ul>
+
+  <ul>
+
+    <li>Responsibilities: Ruby client, Rails integrations, internal applications, …</li>
+
+    <li>… and also, the official Go client</li>
+
+  </ul>
+
+
+      <span class="pagenumber">2</span>
+      </article>
+
+
+
+      <article class="background far-next" style="background-image: url(&#39;images/go-at-elastic.png&#39;)">
+
+        <h3>Go and Elastic.co</h3>
+
+  <ul>
+
+    <li>Beats</li>
+
+    <li>APM Server</li>
+
+    <li>Various Elastic Cloud services</li>
+
+    <li>Internal Tools</li>
+
+  </ul>
+
+
+  <p>
+    <b>Application</b> <b>Performance</b> <b>Metrics</b>
+  </p>
+
+<p class="link"><a href="https://github.com/elastic/apm-agent-go" target="_blank">github.com/elastic/apm-agent-go</a></p>
+
+      <span class="pagenumber">3</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>~</h3>
+
+
+  <p>
+    Source code for this talk:
+  </p>
+
+<p class="link"><a href="https://github.com/karmi/gotalks/tree/master/2019/go-elasticsearch" target="_blank">github.com/karmi/gotalks/tree/master/2019/go-elasticsearch</a></p>
+
+      <span class="pagenumber">4</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Ruby → Golang ﹦ ⁈</h3>
+
+  <ul>
+
+    <li>Leverage experience with the Ruby client</li>
+
+    <li>Avoid following Go idioms blindly</li>
+
+    <li>Be creative with Go features</li>
+
+  </ul>
+
+
+  <p>
+    “Writing good code has much in common with writing good English”
+  </p>
+
+
+
+  <p>
+    ~ <a href="http://bit.ly/2ltnEti" target="_blank">Kernighan/Pike, The Practice of Programming</a>
+  </p>
+
+
+
+      <span class="pagenumber">5</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Goals for an official Elasticsearch client</h3>
+
+
+  <p>
+    1. Be consistent with other official clients
+<br>
+
+    2. Be idiomatic for language developers
+  </p>
+
+
+
+  <p>
+    Contradicting goals? Indeed… :)
+  </p>
+
+
+
+      <span class="pagenumber">6</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>—</h3>
+        <p class="link"><a href="https://speakerdeck.com/karmi/all-about-elasticsearch-language-clients-elasticon-2015?slide=5" target="_blank">“All About Elasticsearch Language Clients”, <b>Elastic{ON}</b> <b>2015</b></a></p>
+  <ul>
+
+    <li>An Elasticsearch client is not just a wrapper around HTTP and JSON</li>
+
+    <li>Subtleties like request retrying, discovering nodes, logging, ...</li>
+
+    <li>More then 120 open source APIs, nearly 300 APIs when counting X-Pack</li>
+
+    <li><a href="https://github.com/elastic/elasticsearch/tree/master/rest-api-spec/src/main/resources/rest-api-spec/api" target="_blank">Specification in JSON</a> for the Elasticsearch's HTTP APIs</li>
+
+    <li><a href="https://github.com/elastic/elasticsearch/tree/master/rest-api-spec/src/main/resources/rest-api-spec/test#test-suite" target="_blank">Test suite in YAML</a> for the Elasticsearch's HTTP APIs</li>
+
+    <li>“<b>Nobody</b> should have a reason to <b>not</b> use the official client.”</li>
+
+  </ul>
+
+
+      <span class="pagenumber">7</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Divide and Conquer</h3>
+
+  <ul>
+
+    <li>Start with a limited prototype in a private repository</li>
+
+    <li>Not a "secret project" —&nbsp;<code>@olivere</code> invited as collaborator</li>
+
+    <li>Focused feedback &amp;&nbsp;discussion</li>
+
+    <li>Only handful of APIs, no fancy features, no code generation</li>
+
+  </ul>
+
+
+  <p>
+    Goals:
+  </p>
+
+
+  <ul>
+
+    <li>Verify user experience of the API</li>
+
+    <li>Verify performance (extensive benchmarking)</li>
+
+  </ul>
+
+
+      <span class="pagenumber">8</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Package structure and naming</h3>
+
+
+  <p>
+    1. <code>elastic/go-elasticsearch</code>
+<br>
+
+    2. <code>elastic/go-elasticsearch/esapi</code>
+<br>
+
+    3. <code>elastic/go-elasticsearch/estransport</code>
+<br>
+
+    4. <code>elastic/go-elasticsearch/esutil</code>
+  </p>
+
+
+  <ul>
+
+    <li>Follow the common design of official clients, eg. Ruby or Python</li>
+
+    <li>Better code organization (<code>godoc</code>)</li>
+
+    <li>Don't steal variable names from the user (<code>es</code>) and don't use generic names (<code>api</code>)</li>
+
+    <li>Allow independent usage of packages (eg. only the API package)</li>
+
+  </ul>
+
+
+  <div class="code"><pre>type Interface interface {
+  Perform(*http.Request) (*http.Response, error)
+}</pre></div>
+
+
+
+      <span class="pagenumber">9</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Usage: Initialization</h3>
+
+  <div class="code">
+
+
+<pre><span num="11">import "github.com/elastic/go-elasticsearch"</span>
+</pre>
+
+
+</div>
+
+  <div class="code">
+
+
+<pre><span num="20">    // Defaults</span>
+<span num="21">    //</span>
+<span num="22">    // Note: the ELASTICSEARCH_URL environment variable is used when exported</span>
+<span num="23">    //</span>
+<span num="24">    <b>es, err := elasticsearch.NewDefaultClient()</b></span>
+</pre>
+
+
+</div>
+
+  <div class="code">
+
+
+<pre><span num="28">    // Configuration</span>
+<span num="29">    //</span>
+<span num="30">    cfg := elasticsearch.Config{</span>
+<span num="31">        Addresses: []string{"https://example.com"},</span>
+<span num="32">        Username:  "foo",</span>
+<span num="33">        Password:  "bar",</span>
+<span num="34">    }</span>
+<span num="35"></span>
+<span num="36">    <b>es, err = elasticsearch.NewClient(cfg)</b></span>
+</pre>
+
+
+</div>
+
+
+      <span class="pagenumber">10</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Usage: Calling APIs</h3>
+
+
+  <div class="code"><pre>es, _ := elasticsearch.NewDefaultClient()</pre></div>
+
+
+  <div class="code playground">
+<pre style="display: none"><span>// +build ignore
+
+package main
+
+import (
+	"log"
+	"os"
+)
+
+// START1 OMIT
+import "github.com/elastic/go-elasticsearch"
+
+// END1 OMIT
+
+func main() {
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
+
+	// START2 OMIT
+	// Defaults
+	//
+	// Note: the ELASTICSEARCH_URL environment variable is used when exported
+	//
+	es, err := elasticsearch.NewDefaultClient() // HL
+	// END2 OMIT
+
+	// START3 OMIT
+	// Configuration
+	//
+	cfg := elasticsearch.Config{
+		Addresses: []string{"https://example.com"},
+		Username:  "foo",
+		Password:  "bar",
+	}
+
+	es, err = elasticsearch.NewClient(cfg) // HL
+	// END3 OMIT
+
+	es, err = elasticsearch.NewDefaultClient()
+
+</span></pre>
+
+<pre><span num="42">    <b>res, err := es.Cluster.Health(</b></span>
+<span num="43">        <b>es.Cluster.Health.WithLevel("indices"),</b></span>
+<span num="44">        <b>es.Cluster.Health.WithPretty(),</b></span>
+<span num="45">    <b>)</b></span>
+<span num="46">    if err != nil {</span>
+<span num="47">        log.Fatalf("ERROR: %s", err)</span>
+<span num="48">    }</span>
+<span num="49">    defer res.Body.Close()</span>
+<span num="50">    log.Println(res)</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+  <ul>
+
+    <li>Namespaces</li>
+
+    <li>Functional options</li>
+
+    <li><code>esapi.Response</code> is a <code>fmt.Stringer</code></li>
+
+    <li><code>res.Body</code> is an <code>io.ReadCloser</code> — <b>no</b> <b>decoding</b> of response body</li>
+
+  </ul>
+
+
+      <span class="pagenumber">11</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Implementation: Methods</h3>
+
+  <div class="code">
+
+
+<pre><span num="1">package esapi</span>
+<span num="2"></span>
+<span num="3"><b>type ClusterHealth func(o ...func(*ClusterHealthRequest)) (*Response, error)</b></span>
+<span num="4"></span>
+<span num="5">func (f ClusterHealth) WithLevel(v string) func(*ClusterHealthRequest) {</span>
+<span num="6">    return func(r *ClusterHealthRequest) {</span>
+<span num="7">        r.Level = v</span>
+<span num="8">    }</span>
+<span num="9">}</span>
+<span num="10"></span>
+<span num="11">// WithContext(), WithMasterTimeout(), WithIndex(), WithWaitForActiveShards(), ...</span>
+</pre>
+
+
+</div>
+
+
+      <span class="pagenumber">12</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Implementation: Request Structs</h3>
+
+  <div class="code">
+
+
+<pre><span num="1">package esapi</span>
+<span num="2"></span>
+<span num="3"><b>type ClusterHealthRequest struct {</b></span>
+<span num="4">    Context context.Context</span>
+<span num="5"></span>
+<span num="6">    Level         string</span>
+<span num="7">    Local         bool</span>
+<span num="8">    MasterTimeout time.Duration</span>
+<span num="9">    // ...</span>
+<span num="10"></span>
+<span num="11">    Pretty bool</span>
+<span num="12">}</span>
+<span num="13"></span>
+<span num="14"><b>func (r ClusterHealthRequest) Do(ctx context.Context, transport Transport) (*Response, error) {</b></span>
+<span num="15">    // ...</span>
+<span num="16">    req, _ := newRequest(method, path.String(), nil)</span>
+<span num="17">    // ...</span>
+<span num="18">    res, err := transport.Perform(req)</span>
+<span num="19">    // ...</span>
+<span num="20">    response := Response{ ... }</span>
+<span num="21">    return &amp;response, nil</span>
+<span num="22">}</span>
+</pre>
+
+
+</div>
+
+
+      <span class="pagenumber">13</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Implementation: Constructors</h3>
+
+  <div class="code">
+
+
+<pre><span num="1">package esapi</span>
+<span num="2"></span>
+<span num="3"><b>func newClusterHealthFunc(t Transport) ClusterHealth {</b></span>
+<span num="4">    return func(o ...func(*ClusterHealthRequest)) (*Response, error) {</span>
+<span num="5">        <b>var r = ClusterHealthRequest{}</b></span>
+<span num="6">        for _, f := range o {</span>
+<span num="7">            f(&amp;r)</span>
+<span num="8">        }</span>
+<span num="9">        <b>return r.Do(t)</b></span>
+<span num="10">    }</span>
+<span num="11">}</span>
+<span num="12"></span>
+<span num="13"><b>func New(t Transport) *API {</b></span>
+<span num="14">    return &amp;API{</span>
+<span num="15">        Cluster: &amp;Cluster{</span>
+<span num="16">            <b>Health: newClusterHealthFunc(t),</b></span>
+<span num="17">        },</span>
+<span num="18"></span>
+<span num="19">        // ...</span>
+<span num="20">    }</span>
+<span num="21">}</span>
+</pre>
+
+
+</div>
+<figcaption><a href="https://github.com/elastic/go-elasticsearch/blob/master/esapi/api._.go" target="_blank">https://github.com/elastic/go-elasticsearch/blob/master/esapi/api._.go</a></figcaption>
+
+      <span class="pagenumber">14</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Code Generation: API</h3>
+
+  <div class="code">
+
+
+<pre><span num="1">{</span>
+<span num="2">  "cluster.health":{</span>
+<span num="3">    "documentation":{</span>
+<span num="4">      "url":"https://www.elastic.co/guide/en/elasticsearch/reference/master/cluster-health.html",</span>
+<span num="5">      "description":"Returns basic information about the health of the cluster."</span>
+<span num="6">    },</span>
+<span num="7">    "stability":"stable",</span>
+<span num="8">    "url":{</span>
+<span num="9">      "paths":[</span>
+<span num="10">        {</span>
+<span num="11">          "path":"/_cluster/health",</span>
+<span num="12">          "methods":[</span>
+<span num="13">            "GET"</span>
+<span num="14">          ]</span>
+<span num="15">        },</span>
+<span num="16">        {</span>
+<span num="17">          "path":"/_cluster/health/{index}",</span>
+<span num="18">          "methods":[</span>
+<span num="19">            "GET"</span>
+<span num="20">          ],</span>
+<span num="21">          "parts":{</span>
+<span num="22">            "index":{</span>
+<span num="23">              "type":"list",</span>
+<span num="24">              "description":"Limit the information returned to a specific index"</span>
+<span num="25">            }</span>
+<span num="26">          }</span>
+<span num="27">        }</span>
+<span num="28">      ]</span>
+<span num="29">    },</span>
+<span num="30">    "params":{</span>
+<span num="31">      "level":{</span>
+<span num="32">        "type":"enum",</span>
+<span num="33">        "options":[</span>
+<span num="34">          "cluster",</span>
+<span num="35">          "indices",</span>
+<span num="36">          "shards"</span>
+<span num="37">        ],</span>
+<span num="38">        "default":"cluster",</span>
+<span num="39">        "description":"Specify the level of detail for returned information"</span>
+<span num="40">      },</span>
+<span num="41">      "local":{</span>
+<span num="42">        "type":"boolean",</span>
+<span num="43">        "description":"Return local information, do not retrieve the state from master node (default: false)"</span>
+<span num="44">      },</span>
+<span num="45">      "master_timeout":{</span>
+<span num="46">        "type":"time",</span>
+<span num="47">        "description":"Explicit operation timeout for connection to master node"</span>
+<span num="48">      },</span>
+<span num="49">      // ...</span>
+<span num="50">  }</span>
+<span num="51">}</span>
+</pre>
+
+
+</div>
+<figcaption><a href="https://github.com/elastic/elasticsearch/blob/master/rest-api-spec" target="_blank">https://github.com/elastic/elasticsearch/blob/master/rest-api-spec</a></figcaption>
+
+      <span class="pagenumber">15</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Code Generation: Tests</h3>
+
+  <div class="code">
+
+
+<pre><span num="1">---</span>
+<span num="2">"cluster health basic test":</span>
+<span num="3">  - do:</span>
+<span num="4">      cluster.health: {}</span>
+<span num="5"></span>
+<span num="6">  - is_true:   cluster_name</span>
+<span num="7">  - is_false:  timed_out</span>
+<span num="8">  - gte:       { number_of_nodes:         1 }</span>
+<span num="9">  - gte:       { number_of_data_nodes:    1 }</span>
+<span num="10">  - match:     { active_primary_shards:   0 }</span>
+<span num="11">  - match:     { active_shards:           0 }</span>
+<span num="12">  - match:     { relocating_shards:       0 }</span>
+<span num="13">  - match:     { initializing_shards:     0 }</span>
+<span num="14">  - match:     { unassigned_shards:       0 }</span>
+<span num="15">  - gte:       { number_of_pending_tasks: 0 }</span>
+<span num="16"></span>
+<span num="17">---</span>
+<span num="18">"cluster health basic test, one index":</span>
+<span num="19">  - do:</span>
+<span num="20">      indices.create:</span>
+<span num="21">        index: test_index</span>
+<span num="22">        body:</span>
+<span num="23">          settings:</span>
+<span num="24">            index:</span>
+<span num="25">              number_of_replicas: 0</span>
+<span num="26"></span>
+<span num="27">  - do:</span>
+<span num="28">      cluster.health:</span>
+<span num="29">        wait_for_status: green</span>
+<span num="30">        wait_for_no_relocating_shards: true</span>
+<span num="31"></span>
+<span num="32">  - is_true:   cluster_name</span>
+<span num="33">  - is_false:  timed_out</span>
+<span num="34">  - gte:       { number_of_nodes:         1 }</span>
+<span num="35">  - gte:       { number_of_data_nodes:    1 }</span>
+<span num="36">  - gt:        { active_primary_shards:   0 }</span>
+<span num="37">  - gt:        { active_shards:           0 }</span>
+<span num="38">  - gte:       { relocating_shards:       0 }</span>
+<span num="39">  - match:     { initializing_shards:     0 }</span>
+<span num="40">  - match:     { unassigned_shards:       0 }</span>
+<span num="41">  - gte:       { number_of_pending_tasks: 0 }</span>
+<span num="42"></span>
+<span num="43">---</span>
+<span num="44">"cluster health basic test, one index with wait for active shards":</span>
+<span num="45">  - do:</span>
+<span num="46">      indices.create:</span>
+<span num="47">        index: test_index</span>
+<span num="48">        body:</span>
+<span num="49">          settings:</span>
+<span num="50">            index:</span>
+<span num="51">              number_of_replicas: 0</span>
+<span num="52"></span>
+<span num="53">  - do:</span>
+<span num="54">      cluster.health:</span>
+<span num="55">        wait_for_active_shards: 1</span>
+<span num="56">        wait_for_no_relocating_shards: true</span>
+<span num="57"></span>
+<span num="58">  - is_true:   cluster_name</span>
+<span num="59">  - is_false:  timed_out</span>
+<span num="60">  - gte:       { number_of_nodes:         1 }</span>
+<span num="61">  - gte:       { number_of_data_nodes:    1 }</span>
+<span num="62">  - gt:        { active_primary_shards:   0 }</span>
+<span num="63">  - gt:        { active_shards:           0 }</span>
+<span num="64">  - gte:       { relocating_shards:       0 }</span>
+<span num="65">  - match:     { initializing_shards:     0 }</span>
+<span num="66">  - match:     { unassigned_shards:       0 }</span>
+<span num="67">  - gte:       { number_of_pending_tasks: 0 }</span>
+<span num="68"></span>
+<span num="69">---</span>
+<span num="70">"cluster health basic test, one index with wait for all active shards":</span>
+<span num="71">  - do:</span>
+<span num="72">      indices.create:</span>
+<span num="73">        index: test_index</span>
+<span num="74">        body:</span>
+<span num="75">          settings:</span>
+<span num="76">            index:</span>
+<span num="77">              number_of_replicas: 0</span>
+<span num="78"></span>
+<span num="79">  - do:</span>
+<span num="80">      cluster.health:</span>
+<span num="81">        wait_for_active_shards: all</span>
+<span num="82">        wait_for_no_relocating_shards: true</span>
+<span num="83"></span>
+<span num="84">  - is_true:   cluster_name</span>
+<span num="85">  - is_false:  timed_out</span>
+<span num="86">  - gte:       { number_of_nodes:         1 }</span>
+<span num="87">  - gte:       { number_of_data_nodes:    1 }</span>
+<span num="88">  - gt:        { active_primary_shards:   0 }</span>
+<span num="89">  - gt:        { active_shards:           0 }</span>
+<span num="90">  - gte:       { relocating_shards:       0 }</span>
+<span num="91">  - match:     { initializing_shards:     0 }</span>
+<span num="92">  - match:     { unassigned_shards:       0 }</span>
+<span num="93">  - gte:       { number_of_pending_tasks: 0 }</span>
+<span num="94"></span>
+<span num="95">---</span>
+<span num="96">"cluster health basic test, one index with wait for no initializing shards":</span>
+<span num="97"></span>
+<span num="98">  - do:</span>
+<span num="99">      indices.create:</span>
+<span num="100">        index: test_index</span>
+<span num="101">        wait_for_active_shards: 0</span>
+<span num="102">        body:</span>
+<span num="103">          settings:</span>
+<span num="104">            index:</span>
+<span num="105">              number_of_replicas: 0</span>
+<span num="106"></span>
+<span num="107">  - do:</span>
+<span num="108">      cluster.health:</span>
+<span num="109">        wait_for_no_initializing_shards: true</span>
+<span num="110"></span>
+<span num="111">  - match: { initializing_shards: 0 }</span>
+<span num="112"></span>
+<span num="113">---</span>
+<span num="114">"cluster health levels":</span>
+<span num="115">  - do:</span>
+<span num="116">      indices.create:</span>
+<span num="117">        index: test_index</span>
+<span num="118">  - do:</span>
+<span num="119">      cluster.health:</span>
+<span num="120">        level: indices</span>
+<span num="121"></span>
+<span num="122">  - is_true: indices</span>
+<span num="123">  - is_false: indices.test_index.shards</span>
+<span num="124"></span>
+<span num="125">  - do:</span>
+<span num="126">        cluster.health:</span>
+<span num="127">          level: shards</span>
+<span num="128"></span>
+<span num="129">  - is_true: indices</span>
+<span num="130">  - is_true: indices.test_index.shards</span>
+<span num="131"></span>
+<span num="132">---</span>
+<span num="133">"cluster health with closed index (pre 7.2.0)":</span>
+<span num="134">  - skip:</span>
+<span num="135">      version: "7.2.0 - "</span>
+<span num="136">      reason:  "closed indices are replicated starting version 7.2.0"</span>
+<span num="137"></span>
+<span num="138">  - do:</span>
+<span num="139">      indices.create:</span>
+<span num="140">        index: index-1</span>
+<span num="141">        body:</span>
+<span num="142">          settings:</span>
+<span num="143">            index:</span>
+<span num="144">              number_of_replicas: 0</span>
+<span num="145"></span>
+<span num="146">  - do:</span>
+<span num="147">      cluster.health:</span>
+<span num="148">        wait_for_status: green</span>
+<span num="149">  - match:     { status:     green }</span>
+<span num="150"></span>
+<span num="151">  - do:</span>
+<span num="152">      indices.create:</span>
+<span num="153">        index: index-2</span>
+<span num="154">        body:</span>
+<span num="155">          settings:</span>
+<span num="156">            index:</span>
+<span num="157">              number_of_replicas: 50</span>
+<span num="158"></span>
+<span num="159">  - do:</span>
+<span num="160">      cluster.health:</span>
+<span num="161">        wait_for_status: yellow</span>
+<span num="162">        wait_for_no_relocating_shards: true</span>
+<span num="163">  - match:     { status:     yellow }</span>
+<span num="164"></span>
+<span num="165">  - do:</span>
+<span num="166">      cluster.health:</span>
+<span num="167">        index: index-*</span>
+<span num="168">  - match:     { status:     yellow }</span>
+<span num="169"></span>
+<span num="170">  - do:</span>
+<span num="171">      cluster.health:</span>
+<span num="172">        index: index-1</span>
+<span num="173">  - match:     { status:     green }</span>
+<span num="174"></span>
+<span num="175">  - do:</span>
+<span num="176">      cluster.health:</span>
+<span num="177">        index: index-2</span>
+<span num="178">  - match:     { status:     yellow }</span>
+<span num="179"></span>
+<span num="180">  - do:</span>
+<span num="181">      indices.close:</span>
+<span num="182">        index: index-2</span>
+<span num="183">  - is_true: acknowledged</span>
+<span num="184"></span>
+<span num="185">  # closing the index-2 turns the cluster health back to green</span>
+<span num="186">  - do:</span>
+<span num="187">      cluster.health:</span>
+<span num="188">        wait_for_status: green</span>
+<span num="189">  - match:     { status:     green }</span>
+<span num="190"></span>
+<span num="191">  - do:</span>
+<span num="192">      cluster.health:</span>
+<span num="193">        index: index-*</span>
+<span num="194">  - match:     { status:     green }</span>
+<span num="195"></span>
+<span num="196">  - do:</span>
+<span num="197">      cluster.health:</span>
+<span num="198">        index: index-1</span>
+<span num="199">  - match:     { status:     green }</span>
+<span num="200"></span>
+<span num="201">  - do:</span>
+<span num="202">      cluster.health:</span>
+<span num="203">        index: index-2</span>
+<span num="204">  - match:     { status:     green }</span>
+<span num="205"></span>
+<span num="206">---</span>
+<span num="207">"cluster health with closed index":</span>
+<span num="208">  - skip:</span>
+<span num="209">      version: " - 7.1.99"</span>
+<span num="210">      reason:  "closed indices are replicated starting version 7.2.0"</span>
+<span num="211"></span>
+<span num="212">  - do:</span>
+<span num="213">      indices.create:</span>
+<span num="214">        index: index-1</span>
+<span num="215">        body:</span>
+<span num="216">          settings:</span>
+<span num="217">            index:</span>
+<span num="218">              number_of_replicas: 0</span>
+<span num="219"></span>
+<span num="220">  - do:</span>
+<span num="221">      cluster.health:</span>
+<span num="222">        wait_for_status: green</span>
+<span num="223">  - match:     { status:     green }</span>
+<span num="224"></span>
+<span num="225">  - do:</span>
+<span num="226">      indices.create:</span>
+<span num="227">        index: index-2</span>
+<span num="228">        body:</span>
+<span num="229">          settings:</span>
+<span num="230">            index:</span>
+<span num="231">              number_of_replicas: 50</span>
+<span num="232"></span>
+<span num="233">  - do:</span>
+<span num="234">      cluster.health:</span>
+<span num="235">        wait_for_status: yellow</span>
+<span num="236">        wait_for_no_relocating_shards: true</span>
+<span num="237">  - match:     { status:     yellow }</span>
+<span num="238"></span>
+<span num="239">  - do:</span>
+<span num="240">      cluster.health:</span>
+<span num="241">        index: index-*</span>
+<span num="242">  - match:     { status:     yellow }</span>
+<span num="243"></span>
+<span num="244">  - do:</span>
+<span num="245">      cluster.health:</span>
+<span num="246">        index: index-1</span>
+<span num="247">  - match:     { status:     green }</span>
+<span num="248"></span>
+<span num="249">  - do:</span>
+<span num="250">      cluster.health:</span>
+<span num="251">        index: index-2</span>
+<span num="252">  - match:     { status:     yellow }</span>
+<span num="253"></span>
+<span num="254">  # closing the index-2 does not change the cluster health with replicated closed indices</span>
+<span num="255">  - do:</span>
+<span num="256">      indices.close:</span>
+<span num="257">        index: index-2</span>
+<span num="258">  - is_true: acknowledged</span>
+<span num="259"></span>
+<span num="260">  - do:</span>
+<span num="261">      cluster.health:</span>
+<span num="262">        wait_for_status: yellow</span>
+<span num="263">  - match:     { status:     yellow }</span>
+<span num="264"></span>
+<span num="265">  - do:</span>
+<span num="266">      cluster.health:</span>
+<span num="267">        index: index-*</span>
+<span num="268">  - match:     { status:     yellow }</span>
+<span num="269"></span>
+<span num="270">  - do:</span>
+<span num="271">      cluster.health:</span>
+<span num="272">        index: index-1</span>
+<span num="273">  - match:     { status:     green }</span>
+<span num="274"></span>
+<span num="275">  - do:</span>
+<span num="276">      cluster.health:</span>
+<span num="277">        index: index-2</span>
+<span num="278">  - match:     { status:     yellow }</span>
+</pre>
+
+
+</div>
+<figcaption><a href="https://github.com/elastic/elasticsearch/blob/master/rest-api-spec" target="_blank">https://github.com/elastic/elasticsearch/blob/master/rest-api-spec</a></figcaption>
+
+      <span class="pagenumber">16</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Continuous Integration</h3>
+
+<div class="image">
+  <img src="./go-elasticsearch-files/jenkins-go-elasticsearch.png">
+</div>
+
+
+      <span class="pagenumber">17</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Documentation</h3>
+
+
+  <div class="code"><pre>$ go doc go-elasticsearch/esapi ClusterHealth</pre></div>
+
+
+<iframe src="./go-elasticsearch-files/saved_resource.html" height="500" width="1000"></iframe>
+
+
+      <span class="pagenumber">18</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Usage: Method arguments and request bodies</h3>
+
+
+  <div class="code"><pre>type Index func(index string, body io.Reader, o ...func(*IndexRequest)) (*Response, error)</pre></div>
+
+
+  <div class="code playground">
+<pre style="display: none"><span>// +build ignore
+
+package main
+
+import (
+	"log"
+	"os"
+	"strings"
+
+	"github.com/elastic/go-elasticsearch"
+)
+
+func main() {
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
+
+	es, err := elasticsearch.NewDefaultClient()
+	if err != nil {
+		log.Fatalf("ERROR: %s", err)
+	}
+
+</span></pre>
+
+<pre><span num="23">    <b>res, err := es.Index(</b></span>
+<span num="24">        <b>"test",</b></span>
+<span num="25">        <b>strings.NewReader(`{"foo":"bar"}`),</b></span>
+<span num="26">        <b>es.Index.WithDocumentID("1"),</b></span>
+<span num="27">        <b>es.Index.WithPretty(),</b></span>
+<span num="28">    <b>)</b></span>
+<span num="29">    if err != nil {</span>
+<span num="30">        log.Fatalf("ERROR: %s", err)</span>
+<span num="31">    }</span>
+<span num="32">    defer res.Body.Close()</span>
+<span num="33">    log.Println(res)</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">19</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Usage: Request Structs</h3>
+
+  <div class="code">
+
+
+<pre><span num="13">import (</span>
+<span num="14">    "github.com/elastic/go-elasticsearch"</span>
+<span num="15">    <b>"github.com/elastic/go-elasticsearch/esapi"</b></span>
+<span num="16">)</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>// +build ignore
+
+package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"strings"
+)
+
+// START1 OMIT
+import (
+	"github.com/elastic/go-elasticsearch"
+	"github.com/elastic/go-elasticsearch/esapi" // HL
+)
+
+// END1 OMIT
+
+func main() {
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
+
+	es, err := elasticsearch.NewDefaultClient()
+	if err != nil {
+		log.Fatalf("ERROR: %s", err)
+	}
+
+</span></pre>
+
+<pre><span num="30">    <b>req := esapi.IndexRequest{</b></span>
+<span num="31">        <b>Index:      "test",</b></span>
+<span num="32">        <b>DocumentID: "1",</b></span>
+<span num="33">        <b>Body:       strings.NewReader(`{"foo":"bar"}`),</b></span>
+<span num="34">        <b>Pretty:     true,</b></span>
+<span num="35">    <b>}</b></span>
+<span num="36"></span>
+<span num="37">    <b>res, err := req.Do(context.Background(), es)</b></span>
+<span num="38">    if err != nil {</span>
+<span num="39">        log.Fatalf("Error getting response: %s", err)</span>
+<span num="40">    }</span>
+<span num="41">    defer res.Body.Close()</span>
+<span num="42">    log.Println(res)</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">20</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Usage: JSON Decoding</h3>
+
+  <div class="code">
+
+
+<pre><span num="14">import "encoding/json"</span>
+<span num="15">import "github.com/tidwall/gjson"</span>
+</pre>
+
+
+</div>
+
+  <div class="code">
+
+
+<pre><span num="32">    <b>var d map[string]interface{}</b></span>
+<span num="33">    <b>err = json.NewDecoder(res.Body).Decode(&amp;d)</b></span>
+<span num="34">    if err != nil {</span>
+<span num="35">        log.Fatalf("Error parsing the response: %s", err)</span>
+<span num="36">    }</span>
+<span num="37"></span>
+<span num="38">    <b>log.Println("encoding/json:", d["tagline"])</b></span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>// +build ignore
+
+package main
+
+import (
+	"bytes"
+	"log"
+	"os"
+
+	"github.com/elastic/go-elasticsearch"
+)
+
+// START1 OMIT
+import "encoding/json"
+import "github.com/tidwall/gjson"
+
+// END1 OMIT
+
+func main() {
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
+
+	es, err := elasticsearch.NewDefaultClient()
+	if err != nil {
+		log.Fatalf("ERROR: %s", err)
+	}
+
+	res, _ := es.Info()
+	defer res.Body.Close()
+
+	// START2 OMIT
+	var d map[string]interface{}               // HL
+	err = json.NewDecoder(res.Body).Decode(&amp;d) // HL
+	if err != nil {
+		log.Fatalf("Error parsing the response: %s", err)
+	}
+
+	log.Println("encoding/json:", d["tagline"]) // HL
+	// END2 OMIT
+
+	res, _ = es.Info()
+	defer res.Body.Close()
+
+</span></pre>
+
+<pre><span num="45">    <b>var b bytes.Buffer</b></span>
+<span num="46">    <b>b.ReadFrom(res.Body)</b></span>
+<span num="47"></span>
+<span num="48">    <b>log.Println("tidwall/gjson:", gjson.GetBytes(b.Bytes(), "tagline"))</b></span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">21</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Usage: JSON Encoding</h3>
+
+  <div class="code">
+
+
+<pre><span num="14">import "github.com/elastic/go-elasticsearch/esutil"</span>
+</pre>
+
+
+</div>
+
+  <div class="code">
+
+
+<pre><span num="33">    res, _ = es.Index(</span>
+<span num="34">        "test",</span>
+<span num="35">        <b>esutil.NewJSONReader(map[string]interface{}{"foo": "bar"}),</b></span>
+<span num="36">    )</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>// +build ignore
+
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/elastic/go-elasticsearch"
+	"github.com/elastic/go-elasticsearch/esapi"
+)
+
+// START1 OMIT
+import "github.com/elastic/go-elasticsearch/esutil"
+
+// END1 OMIT
+
+func main() {
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
+
+	var (
+		res *esapi.Response
+		err error
+	)
+
+	es, err := elasticsearch.NewDefaultClient()
+	if err != nil {
+		log.Fatalf("ERROR: %s", err)
+	}
+
+	// START2 OMIT
+	res, _ = es.Index(
+		"test",
+		esutil.NewJSONReader(map[string]interface{}{"foo": "bar"}), // HL
+	)
+	// END2 OMIT
+
+	defer res.Body.Close()
+	log.Println(res)
+
+</span></pre>
+
+<pre><span num="43">    <b>type Doc struct {</b></span>
+<span num="44">        <b>Title string `json:"title"`</b></span>
+<span num="45">    <b>}</b></span>
+<span num="46"></span>
+<span num="47">    <b>doc := Doc{Title: "Test"}</b></span>
+<span num="48"></span>
+<span num="49">    res, _ = es.Index(</span>
+<span num="50">        "test",</span>
+<span num="51">        <b>esutil.NewJSONReader(&amp;doc),</b></span>
+<span num="52">    )</span>
+</pre>
+
+<pre style="display: none"><span>
+	defer res.Body.Close()
+	log.Println(res)
+}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">22</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Examples! Examples! Examples!</h3>
+
+<div class="image">
+  <img src="./go-elasticsearch-files/ballmer.gif">
+</div>
+<p class="link"><a href="https://github.com/elastic/go-elasticsearch/tree/master/_examples" target="_blank">github.com/elastic/go-elasticsearch/tree/master/_examples</a></p>
+
+      <span class="pagenumber">23</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Examples! Examples! Examples!</h3>
+        <p class="link"><a href="https://github.com/elastic/go-elasticsearch/tree/master/_examples" target="_blank">github.com/elastic/go-elasticsearch/tree/master/_examples</a></p>
+  <ul>
+
+    <li>Client configuration and transport customization</li>
+
+    <li>Custom HTTP Transport (<code>valyala/fasthttp</code>)</li>
+
+    <li>Encoding (<code>encoding/json</code>, <code>mailru/easyjson</code>, <code>tidwall/gjson</code>)</li>
+
+    <li>Extending the client APIs</li>
+
+    <li>Logging</li>
+
+    <li>Bulk indexing</li>
+
+    <li>Instrumentation (OpenCensus, Elastic APM)</li>
+
+    <li>Complete application: XKCD Search (CLI, UI, API) | <a href="https://xkcd-golang.app.elstc.co/" target="_blank">https://xkcd-golang.app.elstc.co</a></li>
+
+  </ul>
+
+
+      <span class="pagenumber">24</span>
+      </article>
+
+
+
+      <article>
+        <h3>Thank You</h3>
+        <h4><smal style="opacity: 0.5; display: inline-block; margin-bottom: 20px" l="">☛</smal> &nbsp;Questions, please!</h4>
+
+          <div class="presenter">
+
+
+  <p>
+    Karel Minařík
+  </p>
+
+
+          </div>
+
+          <div class="presenter">
+            <p class="link"><a href="http://karmi.cz/" target="_blank">http://karmi.cz</a></p><p class="link"><a href="http://twitter.com/karmiq" target="_blank">@karmiq</a></p>
+          </div>
+
+          <div class="presenter">
+
+
+  <p>
+
+  </p>
+
+
+          </div>
+
+      </article>
+
+    <div class="slide-area" id="prev-slide-area"></div><div class="slide-area" id="next-slide-area"></div></section>
+
+    <div id="help" style="display: none;">
+      Use the left and right arrow keys or click the left and right
+      edges of the page to navigate between slides.<br>
+      (Press 'H' or navigate to hide this message.)
+    </div>
+
+
+    <script src="./go-elasticsearch-files/play.js"></script>
+
+
+    <script>
+      (function() {
+
+        if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+          var ga = document.createElement("script"); ga.type = "text/javascript"; ga.async = true;
+          ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+          var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ga, s);
+        }
+      })();
+    </script>
+
+
+<link rel="stylesheet" type="text/css" href="./go-elasticsearch-files/css"><link rel="stylesheet" type="text/css" href="./go-elasticsearch-files/styles.css"></body></html>
