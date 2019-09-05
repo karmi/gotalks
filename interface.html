@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<!-- saved from url=(0054)http://localhost:3999/2018/interface/interface.slide#1 -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Go Forth and interface{}</title>
+
+    <link rel="stylesheet" type="text/css" href="./interface-files/override.css">
+    <script>
+      var notesEnabled =  false ;
+    </script>
+    <script src="./interface-files/slides.js"></script>
+
+
+
+    <script>
+
+      if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+        var _gaq = _gaq || [];
+        _gaq.push(["_setAccount", "UA-11222381-6"]);
+        _gaq.push(["b._setAccount", "UA-49880327-6"]);
+        window.trackPageview = function() {
+          _gaq.push(["_trackPageview", location.pathname+location.hash]);
+          _gaq.push(["b._trackPageview", location.pathname+location.hash]);
+        };
+        window.trackPageview();
+        window.trackEvent = function(category, action, opt_label, opt_value, opt_noninteraction) {
+          _gaq.push(["_trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+          _gaq.push(["b._trackEvent", category, action, opt_label, opt_value, opt_noninteraction]);
+        };
+      }
+    </script>
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"></head>
+
+  <body style="display: none" class="loaded">
+
+    <section class="slides layout-widescreen" style="transform: scale(0.998667);">
+
+      <article class="current">
+        <h1>Go Forth and interface{}</h1>
+
+
+
+          <div class="presenter">
+
+
+  <p>
+    Karel Minařík
+  </p>
+
+
+          </div>
+
+          <div class="presenter">
+
+          </div>
+
+          <div class="presenter">
+
+
+  <p>
+
+  </p>
+
+
+          </div>
+
+      </article>
+
+
+
+      <article class="next">
+
+        <h3>$ whoami</h3>
+
+  <ul>
+
+    <li>Web Designer/Developer since... Y2K</li>
+
+    <li>Ruby/Rails since ~ 2007</li>
+
+    <li>Go since ~ 6 months</li>
+
+  </ul>
+
+  <ul>
+
+    <li>Elasticsearch since 2010</li>
+
+    <li>Elastic.co since 2012</li>
+
+  </ul>
+
+  <ul>
+
+    <li>Ruby client, Rails integrations, internal applications</li>
+
+  </ul>
+
+
+      <span class="pagenumber">2</span>
+      </article>
+
+
+
+      <article class="background far-next" style="background-image: url(&#39;images/go-at-elastic.png&#39;)">
+
+        <h3>Go and Elastic.co</h3>
+
+  <ul>
+
+    <li>Beats</li>
+
+    <li>APM Server</li>
+
+    <li>Various Elastic Cloud services</li>
+
+    <li>Internal Tools</li>
+
+  </ul>
+
+
+  <p>
+    <b>Application</b> <b>Performance</b> <b>Metrics</b> for <code>#golang</code>
+  </p>
+
+<p class="link"><a href="https://github.com/elastic/apm-agent-go" target="_blank">github.com/elastic/apm-agent-go</a></p>
+
+      <span class="pagenumber">3</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>~</h3>
+
+
+  <p>
+    Source code for this talk:
+  </p>
+
+<p class="link"><a href="https://github.com/karmi/gotalks/tree/master/2018/interface/code" target="_blank">github.com/karmi/gotalks/tree/master/2018/interface/code</a></p>
+
+      <span class="pagenumber">4</span>
+      </article>
+
+
+
+      <article>
+
+        <h2>Why are Go interfaces interesting?</h2>
+
+      <span class="pagenumber">5</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>—</h3>
+
+
+  <p>
+    “Go's interfaces — static, checked at compile time, dynamic when asked for – are, for me, the most exciting part of Go from a language design point of view.
+  </p>
+
+
+
+  <p>
+    If I could export one feature of Go into other languages, it would be interfaces.”
+  </p>
+
+
+
+  <p>
+    ~ <a href="https://research.swtch.com/interfaces" target="_blank">Russ Cox</a>
+  </p>
+
+
+
+      <span class="pagenumber">6</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Interfaces allow a certain level of dynamism in a strict language</h3>
+
+  <ul>
+
+    <li>"Duck typing"</li>
+
+    <li>"Polymorphism"</li>
+
+    <li>...</li>
+
+  </ul>
+
+
+  <p>
+    There are two ways how to look at interfaces:
+  </p>
+
+
+
+  <p>
+    1. The <code>interface{}</code> <b>type</b>
+  </p>
+
+
+
+  <div class="code"><pre>type Speaker interface{}</pre></div>
+
+
+
+  <p>
+    2. The <b>empty</b> <code>interface{}</code>
+  </p>
+
+
+
+  <div class="code"><pre>var a interface{}</pre></div>
+
+
+
+      <span class="pagenumber">7</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The empty interface{}</h3>
+
+  <ul>
+
+    <li>Allows to handle values dynamically</li>
+
+    <li>Used every day — <code>fmt.Println()</code></li>
+
+  </ul>
+
+
+  <div class="code"><pre>$ go doc fmt Println
+func Println(a ...interface{}) (n int, err error)
+# -&gt; Fprintln() -&gt; doPrintln() -&gt; printArg()
+
+$ godoc --src fmt printArg
+# ...
+switch f := arg.(type) {
+case bool:
+    p.fmtBool(f, verb)
+# ...
+case string:
+    p.fmtString(f, verb)
+}
+
+$ go doc fmt.Stringer
+type Stringer interface {
+  String() string
+}</pre></div>
+
+
+
+      <span class="pagenumber">8</span>
+      </article>
+
+
+
+      <article>
+
+        <h2>The interface{} type</h2>
+
+      <span class="pagenumber">9</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+        <p class="link"><a href="https://medium.com/@matryer/golang-advent-calendar-day-one-duck-typing-a513aaed544d" target="_blank">Mat Ryer, <i>Duck</i> <i>Typing</i> <i>in</i> <i>Go</i></a></p>
+  <div class="code">
+
+
+<pre><span num="8">type Speaker interface {</span>
+<span num="9">    <b>Say(string)</b></span>
+<span num="10">}</span>
+<span num="11"></span>
+<span num="12">type Person struct {</span>
+<span num="13">    Name string</span>
+<span num="14">}</span>
+<span num="15"></span>
+<span num="16"><b>func (p *Person) Say(msg string) {</b></span>
+<span num="17">    fmt.Println(p.Name + " says: " + msg)</span>
+<span num="18">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"fmt"
+)
+
+// START1 OMIT
+type Speaker interface {
+	Say(string) // HL
+}
+
+type Person struct {
+	Name string
+}
+
+func (p *Person) Say(msg string) { // HL
+	fmt.Println(p.Name + " says: " + msg)
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="24">    p := Person{"John"}</span>
+<span num="25">    p.Say("Hello Gophers!")</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">10</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+
+  <div class="code">
+
+
+<pre><span num="8">type Speaker interface {</span>
+<span num="9">    <b>Say(string)</b></span>
+<span num="10">}</span>
+<span num="11"></span>
+<span num="12">type Person struct {</span>
+<span num="13">    Name string</span>
+<span num="14">}</span>
+<span num="15"></span>
+<span num="16"><b>func (p *Person) Say(msg string) {</b></span>
+<span num="17">    fmt.Println(p.Name + " says: " + msg)</span>
+<span num="18">}</span>
+</pre>
+
+
+</div>
+
+
+  <p>
+    <i>n.b.</i>
+  </p>
+
+
+
+  <p>
+    ⇢ <b>Implicit</b> satisfaction (no <code>implements</code> clause)
+  </p>
+
+
+
+      <span class="pagenumber">11</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+
+  <div class="code">
+
+
+<pre><span num="21">// # Person implementation omitted</span>
+<span num="22"></span>
+<span num="23">type Robot struct {</span>
+<span num="24">    Name string</span>
+<span num="25">}</span>
+<span num="26"></span>
+<span num="27">func (r *Robot) Say(msg string) {</span>
+<span num="28">    <b>fmt.Println(r.Name + " says: " + hex.EncodeToString([]byte(msg)))</b></span>
+<span num="29">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"encoding/hex"
+	"fmt"
+)
+
+type Speaker interface {
+	Say(string)
+}
+
+type Person struct {
+	Name string
+}
+
+func (p *Person) Say(msg string) {
+	fmt.Println(p.Name + " says: " + msg)
+}
+
+// START1 OMIT
+// # Person implementation omitted
+
+type Robot struct {
+	Name string
+}
+
+func (r *Robot) Say(msg string) {
+	fmt.Println(r.Name + " says: " + hex.EncodeToString([]byte(msg))) // HL
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="35">    p := Person{"John"}</span>
+<span num="36">    p.Say("Hello Gophers!")</span>
+<span num="37"></span>
+<span num="38">    r := Robot{"R2D2"}</span>
+<span num="39">    r.Say("Hello Gophers!")</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">12</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+
+  <div class="code">
+
+
+<pre><span num="30">// # Person and Robot implementation omitted</span>
+<span num="31"></span>
+<span num="32"><b>func SayLoud(speaker Speaker, msg string) {</b></span>
+<span num="33">    fmt.Println(strings.Repeat("!", 80))</span>
+<span num="34">    speaker.Say(msg)</span>
+<span num="35">    fmt.Println(strings.Repeat("!", 80))</span>
+<span num="36">    fmt.Println()</span>
+<span num="37">    // os.Exec "say ..."</span>
+<span num="38">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"encoding/hex"
+	"fmt"
+	"strings"
+)
+
+type Speaker interface {
+	Say(string)
+}
+
+type Person struct {
+	Name string
+}
+
+func (p *Person) Say(msg string) {
+	fmt.Println(p.Name + " says: " + msg)
+}
+
+type Robot struct {
+	Name string
+}
+
+func (r *Robot) Say(msg string) {
+	fmt.Println(r.Name + " says: " + hex.EncodeToString([]byte(msg)))
+}
+
+// START1 OMIT
+// # Person and Robot implementation omitted
+
+func SayLoud(speaker Speaker, msg string) { // HL
+	fmt.Println(strings.Repeat("!", 80))
+	speaker.Say(msg)
+	fmt.Println(strings.Repeat("!", 80))
+	fmt.Println()
+	// os.Exec "say ..."
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="44">    p := Person{"John"}</span>
+<span num="45">    <b>SayLoud(&amp;p, "Hello Gophers!")</b></span>
+<span num="46"></span>
+<span num="47">    r := Robot{"R2D2"}</span>
+<span num="48">    <b>SayLoud(&amp;r, "Hello Gophers!")</b></span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+  <p>
+    <i>n.b.</i>
+  </p>
+
+
+
+  <p>
+    ⇢ The <code>SayLoud()</code> function accepts an interface
+  </p>
+
+
+
+      <span class="pagenumber">13</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+
+  <div class="code">
+
+
+<pre><span num="10">type Speaker interface {</span>
+<span num="11">    Say(string)</span>
+<span num="12">    <b>SayTo(io.Writer, string)</b></span>
+<span num="13">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code">
+
+
+<pre><span num="22">func (p *Person) Say(msg string) {</span>
+<span num="23">    fmt.Println(p.statement(msg))</span>
+<span num="24">}</span>
+<span num="25"></span>
+<span num="26"><b>func (p *Person) SayTo(w io.Writer, msg string) {</b></span>
+<span num="27">    fmt.Fprint(w, p.statement(msg))</span>
+<span num="28">}</span>
+<span num="29"></span>
+<span num="30">func (p *Person) statement(msg string) string { return p.Name + " says: " + msg + "\n" }</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"fmt"
+	"io"
+	"os"
+)
+
+// START1 OMIT
+type Speaker interface {
+	Say(string)
+	SayTo(io.Writer, string) // HL
+}
+
+// END1 OMIT
+
+type Person struct {
+	Name string
+}
+
+// START2 OMIT
+func (p *Person) Say(msg string) {
+	fmt.Println(p.statement(msg))
+}
+
+func (p *Person) SayTo(w io.Writer, msg string) { // HL
+	fmt.Fprint(w, p.statement(msg))
+}
+
+func (p *Person) statement(msg string) string { return p.Name + " says: " + msg + "\n" }
+
+// END2 OMIT
+
+// type Robot struct {
+// 	Name string
+// }
+
+// func (r *Robot) Say(msg string) {
+// 	fmt.Println(r.statement(msg))
+// }
+
+// func (r *Robot) SayTo(w io.Writer, msg string) {
+// 	fmt.Fprint(w, r.statement(msg)+"\n")
+// }
+
+// func (r *Robot) statement(msg string) string {
+// 	return r.Name + " says: " + hex.EncodeToString([]byte(msg))
+// }
+
+func main() {
+</span></pre>
+
+<pre><span num="52">    p := Person{"John"}</span>
+<span num="53">    p.Say("Hello!")</span>
+<span num="54">    p.SayTo(os.Stdout, "Gophers!")</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">14</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
+)
+
+// START1 OMIT
+type Speaker interface {
+	Say(string)
+	SayTo(io.Writer, string) // HL
+}
+
+// END1 OMIT
+
+type Person struct {
+	Name string
+}
+
+// START2 OMIT
+func (p *Person) Say(msg string) {
+	fmt.Println(p.statement(msg))
+}
+
+func (p *Person) SayTo(w io.Writer, msg string) { // HL
+	fmt.Fprint(w, p.statement(msg))
+}
+
+func (p *Person) statement(msg string) string { return p.Name + " says: " + msg + "\n" }
+
+// END2 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="38">    p := Person{"John"}</span>
+<span num="39"></span>
+<span num="40">    // 1. STDOUT</span>
+<span num="41">    fmt.Println("&gt;")</span>
+<span num="42">    <b>p.SayTo(os.Stdout, "Gophers!")</b></span>
+<span num="43"></span>
+<span num="44">    // 2. FILE</span>
+<span num="45">    f, _ := os.OpenFile("/tmp/say.txt", os.O_RDWR|os.O_CREATE, 0755)</span>
+<span num="46">    defer f.Close()</span>
+<span num="47">    <b>p.SayTo(f, "File!")</b></span>
+<span num="48"></span>
+<span num="49">    fmt.Printf("\n$ cat %s\n", f.Name())</span>
+<span num="50">    out, _ := exec.Command("cat", "/tmp/say.txt").Output()</span>
+<span num="51">    fmt.Printf("%s\n", out)</span>
+<span num="52"></span>
+<span num="53">    // 3. HTTP</span>
+<span num="54">    addr := "localhost:4000"</span>
+<span num="55">    fmt.Println("http://" + addr)</span>
+<span num="56">    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {</span>
+<span num="57">        <b>p.SayTo(w, "HTTP!")</b></span>
+<span num="58">    })</span>
+<span num="59"></span>
+<span num="60">    http.ListenAndServe(addr, nil)</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">15</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"os/exec"
+	"strings"
+)
+
+// START1 OMIT
+type Speaker interface {
+	Say(string)
+	SayTo(io.Writer, string) // HL
+}
+
+// END1 OMIT
+
+type Person struct {
+	Name string
+}
+
+// START2 OMIT
+func (p *Person) Say(msg string) {
+	fmt.Println(p.statement(msg))
+}
+
+func (p *Person) SayTo(w io.Writer, msg string) { // HL
+	fmt.Fprint(w, p.statement(msg))
+}
+
+func (p *Person) statement(msg string) string { return p.Name + " says: " + msg + "\n" }
+
+// END2 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="38">    p := Person{"Victoria"}</span>
+<span num="39"></span>
+<span num="40">    <b>var out bytes.Buffer</b></span>
+<span num="41">    <b>p.SayTo(&amp;out, "Hello, Gophers!")</b></span>
+<span num="42"></span>
+<span num="43">    cmd := []string{"say", "--voice", p.Name, out.String()}</span>
+<span num="44"></span>
+<span num="45">    fmt.Printf("$ %s", strings.Join(cmd, " "))</span>
+<span num="46">    <b>exec.Command(cmd[0], cmd[1:]...).Output()</b></span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+  <p>
+    Say it loud :)
+  </p>
+
+
+
+      <span class="pagenumber">16</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>The interface{} type</h3>
+
+  <div class="code">
+
+
+<pre><span num="10">type Speaker interface {</span>
+<span num="11">    Say(string)</span>
+<span num="12">    SayTo(io.Writer, string)</span>
+<span num="13">    <b>Statement() io.Reader</b></span>
+<span num="14">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code">
+
+
+<pre><span num="23">func (p *Person) Say(msg string) { io.Copy(os.Stdout, p.Statement(msg)) }</span>
+<span num="24"></span>
+<span num="25">func (p *Person) SayTo(w io.Writer, msg string) { io.Copy(w, p.Statement(msg)) }</span>
+<span num="26"></span>
+<span num="27"><b>func (p *Person) Statement(msg string) io.Reader {</b></span>
+<span num="28">    return strings.NewReader(p.Name + " says: " + msg + "\n")</span>
+<span num="29">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"io"
+	"os"
+	"strings"
+)
+
+// START1 OMIT
+type Speaker interface {
+	Say(string)
+	SayTo(io.Writer, string)
+	Statement() io.Reader // HL
+}
+
+// END1 OMIT
+
+type Person struct {
+	Name string
+}
+
+// START2 OMIT
+func (p *Person) Say(msg string) { io.Copy(os.Stdout, p.Statement(msg)) }
+
+func (p *Person) SayTo(w io.Writer, msg string) { io.Copy(w, p.Statement(msg)) }
+
+func (p *Person) Statement(msg string) io.Reader { // HL
+	return strings.NewReader(p.Name + " says: " + msg + "\n")
+}
+
+// END2 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="35">    p := Person{"John"}</span>
+<span num="36"></span>
+<span num="37">    p.Say("Hello, streams!")</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">17</span>
+      </article>
+
+
+
+      <article>
+
+        <h2>io.Reader &amp; io.Writer</h2>
+
+      <span class="pagenumber">18</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Interface as an abstraction</h3>
+
+
+  <div class="code"><pre>$ go doc io.Reader
+
+type Reader interface {
+  Read(p []byte) (n int, err error)
+}
+
+$ go doc io.Writer
+
+type Writer interface {
+  Write(p []byte) (n int, err error)
+}
+
+$ go doc io.Copy
+
+func Copy(dst Writer, src Reader) (written int64, err error)</pre></div>
+
+
+
+      <span class="pagenumber">19</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>—</h3>
+
+
+  <p>
+    “The io.Reader interface is very simple; Read reads data into the supplied buffer, and returns to the caller the number of bytes that were read, and any error encountered during read. It seems simple but it’s very powerful.”
+  </p>
+
+
+
+  <p>
+    “Because io.Reader‘s deal with anything that can be expressed as a stream of bytes, we can construct readers over just about anything; a constant string, a byte array, standard in, a network stream, a gzip’d tar file, the standard out of a command being executed remotely via ssh.”
+  </p>
+
+
+
+  <p>
+    ~ <a href="https://dave.cheney.net/2016/08/20/solid-go-design" target="_blank">Dave Cheney</a>
+  </p>
+
+
+
+      <span class="pagenumber">20</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>–</h3>
+
+
+  <p>
+    “If you’re designing a package or utility (even if it’s an internal thing that nobody will ever see) rather than taking in strings or <code>[]byte</code> slices, consider taking in an <code>io.Reader</code> if you can for data sources. Because suddenly, your code will work with every type that implements <code>io.Reader</code>.”
+  </p>
+
+
+
+  <p>
+    — <a href="https://medium.com/@matryer/golang-advent-calendar-day-seventeen-io-reader-in-depth-6f744bb4320b" target="_blank">Mat Ryer</a>
+  </p>
+
+
+
+      <span class="pagenumber">21</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document</h3>
+
+
+  <div class="code"><pre>// Save writes the contents of doc to the file f.
+func Save(f *os.File, doc *Document) error</pre></div>
+
+
+
+  <p>
+    vs
+  </p>
+
+
+
+  <div class="code"><pre>// Save writes the contents of doc to the supplied Writer.
+func Save(w io.Writer, doc *Document) error</pre></div>
+
+
+
+  <p>
+    “Because Save operates directly with files on disk, it is unpleasant to test. (…) <code>*os.File</code> also defines a lot of methods which are not relevant to <code>Save</code> (…)”
+  </p>
+
+
+
+  <p>
+    ~ <a href="https://dave.cheney.net/2016/08/20/solid-go-design" target="_blank">Dave Cheney</a>
+  </p>
+
+
+
+      <span class="pagenumber">22</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document</h3>
+
+  <div class="code">
+
+
+<pre><span num="11">type Document struct {</span>
+<span num="12">    Name    string</span>
+<span num="13">    Content io.Reader</span>
+<span num="14">}</span>
+<span num="15"></span>
+<span num="16">func Save(w io.Writer, doc *Document) error {</span>
+<span num="17">    <b>_, err := io.Copy(w, doc.Content)</b></span>
+<span num="18">    return err</span>
+<span num="19">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"strings"
+)
+
+// START1 OMIT
+type Document struct {
+	Name    string
+	Content io.Reader
+}
+
+func Save(w io.Writer, doc *Document) error {
+	_, err := io.Copy(w, doc.Content) // HL
+	return err
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="25">    var b bytes.Buffer</span>
+<span num="26"></span>
+<span num="27">    doc := &amp;Document{Name: "Test", Content: strings.NewReader("HELLO")}</span>
+<span num="28"></span>
+<span num="29">    <b>Save(&amp;b, doc)</b></span>
+<span num="30"></span>
+<span num="31">    fmt.Printf("%T: %q\n", b, b.String())</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">23</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document to a file</h3>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"strings"
+)
+
+// START1 OMIT
+type Document struct {
+	Name    string
+	Content io.Reader
+}
+
+func Save(w io.Writer, doc *Document) error {
+	_, err := io.Copy(w, doc.Content) // HL
+	return err
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre><span num="25">    <b>f, _ := os.Create("/tmp/document.txt")</b></span>
+<span num="26">    defer f.Close()</span>
+<span num="27"></span>
+<span num="28">    fi, _ := f.Stat()</span>
+<span num="29">    fmt.Printf("File: %s [%dB]\n", fi.Name(), fi.Size())</span>
+<span num="30"></span>
+<span num="31">    doc := &amp;Document{Name: "Test", Content: strings.NewReader("HELLO")}</span>
+<span num="32"></span>
+<span num="33">    <b>Save(f, doc)</b></span>
+<span num="34"></span>
+<span num="35">    fi, _ = f.Stat()</span>
+<span num="36"></span>
+<span num="37">    fmt.Printf("File: %s [%dB]\n", fi.Name(), fi.Size())</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">24</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document to multiple destinations</h3>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"os"
+	"strings"
+)
+
+type Document struct {
+	Name    string
+	Content io.Reader
+}
+
+func Save(w io.Writer, doc *Document) error {
+	_, err := io.Copy(w, doc.Content)
+	return err
+}
+
+func main() {
+</span></pre>
+
+<pre><span num="23">    <b>var b bytes.Buffer</b></span>
+<span num="24"></span>
+<span num="25">    <b>var f, _ = os.Create("/tmp/document.txt")</b></span>
+<span num="26">    defer f.Close()</span>
+<span num="27"></span>
+<span num="28">    doc := &amp;Document{Name: "Test", Content: strings.NewReader("HELLO")}</span>
+<span num="29"></span>
+<span num="30">    <b>var mw = io.MultiWriter(&amp;b, f)</b></span>
+<span num="31"></span>
+<span num="32">    <b>Save(mw, doc)</b></span>
+<span num="33"></span>
+<span num="34">    fi, _ := f.Stat()</span>
+<span num="35"></span>
+<span num="36">    fmt.Printf("%T: %q\n", b, b.String())</span>
+<span num="37">    fmt.Printf("File: %s [%dB]\n", fi.Name(), fi.Size())</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">25</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document to /dev/null</h3>
+
+  <div class="code playground">
+<pre style="display: none"><span>package main
+
+import (
+	"fmt"
+	"io"
+	"io/ioutil"
+	"strings"
+)
+
+type Document struct {
+	Name    string
+	Content io.Reader
+}
+
+func Save(w io.Writer, doc *Document) error {
+	_, err := io.Copy(w, doc.Content)
+	return err
+}
+
+func main() {
+</span></pre>
+
+<pre><span num="22">    doc := &amp;Document{Name: "Test", Content: strings.NewReader("HELLO")}</span>
+<span num="23">    <b>err := Save(ioutil.Discard, doc)</b></span>
+<span num="24"></span>
+<span num="25">    fmt.Printf("Error: %v\n", err)</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">26</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document and verify SHA256 digest (I)</h3>
+
+  <div class="code">
+
+
+<pre><span num="19">func Save(w io.Writer, doc *Document) error {</span>
+<span num="20">    <b>bw := bytes.NewBuffer([]byte{})</b></span>
+<span num="21">    <b>tr := io.TeeReader(doc.Content, bw)</b></span>
+<span num="22">    <b>dw := sha256.New()</b></span>
+<span num="23"></span>
+<span num="24">    <b>io.Copy(dw, tr)</b></span>
+<span num="25"></span>
+<span num="26">    digest := fmt.Sprintf("%x", dw.Sum(nil))</span>
+<span num="27"></span>
+<span num="28">    if digest != doc.Digest {</span>
+<span num="29">        return fmt.Errorf("failed to save document: digest mismatch, %q != %q", digest, doc.Digest)</span>
+<span num="30">    }</span>
+<span num="31"></span>
+<span num="32">    _, err := io.Copy(w, bw)</span>
+<span num="33">    return err</span>
+<span num="34">}</span>
+</pre>
+
+
+</div>
+
+
+      <span class="pagenumber">27</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document and verify SHA256 digest (II)</h3>
+
+  <div class="code playground" contenteditable="true" spellcheck="false">
+<pre style="display: none"><span>package main
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"fmt"
+	"io"
+	"os"
+	"strings"
+)
+
+type Document struct {
+	Name    string
+	Digest  string
+	Content io.Reader
+}
+
+// START1 OMIT
+func Save(w io.Writer, doc *Document) error {
+	bw := bytes.NewBuffer([]byte{})     // HL
+	tr := io.TeeReader(doc.Content, bw) // HL
+	dw := sha256.New()                  // HL
+
+	io.Copy(dw, tr) // HL
+
+	digest := fmt.Sprintf("%x", dw.Sum(nil))
+
+	if digest != doc.Digest {
+		return fmt.Errorf("failed to save document: digest mismatch, %q != %q", digest, doc.Digest)
+	}
+
+	_, err := io.Copy(w, bw)
+	return err
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre contenteditable="true" spellcheck="false"><span num="40">    doc1 := &amp;Document{Name: "Test", Content: strings.NewReader("HELLO\n"), Digest: "foobar"}</span>
+<span num="41">    <b>err := Save(os.Stdout, doc1)</b></span>
+<span num="42"></span>
+<span num="43">    fmt.Fprintf(os.Stderr, "Error: %v\n", err)</span>
+<span num="44"></span>
+<span num="45">    doc2 := &amp;Document{Name: "Test", Content: strings.NewReader("HELLO\n"), Digest: "3b09aeb6f5f5336beb205d7f720371bc927cd46c21922e334d47ba264acb5ba4"}</span>
+<span num="46">    <b>err = Save(os.Stdout, doc2)</b></span>
+<span num="47"></span>
+<span num="48">    fmt.Printf("Error: %v\n", err)</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">28</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document and verify the content size (I)</h3>
+
+  <div class="code">
+
+
+<pre><span num="33">func Save(w io.Writer, doc *Document) error {</span>
+<span num="34">    maxBytes := int64(1 * 1024 * 1042)                                                // 1MB</span>
+<span num="35">    <b>br := http.MaxBytesReader(RWriter{w: w}, ioutil.NopCloser(doc.Content), maxBytes)</b></span>
+<span num="36">    <b>bw := bytes.NewBuffer([]byte{})</b></span>
+<span num="37"></span>
+<span num="38">    <b>_, err := io.Copy(bw, br)</b></span>
+<span num="39">    if err != nil {</span>
+<span num="40">        return fmt.Errorf("document content too big: &gt; %dMB", maxBytes/1024/1024)</span>
+<span num="41">    }</span>
+<span num="42"></span>
+<span num="43">    _, err = io.Copy(w, bw)</span>
+<span num="44">    return err</span>
+<span num="45">}</span>
+</pre>
+
+
+</div>
+
+
+      <span class="pagenumber">29</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Save a document and verify the content size (II)</h3>
+
+  <div class="code playground" contenteditable="true" spellcheck="false">
+<pre style="display: none"><span>package main
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+)
+
+type Document struct {
+	Name    string
+	Digest  string
+	Content io.Reader
+}
+
+// Implement http.ResponseWriter
+
+type RWriter struct {
+	w io.Writer
+}
+
+func (w RWriter) Header() http.Header { return http.Header{} }
+
+func (w RWriter) WriteHeader(s int) {}
+
+func (w RWriter) Write(b []byte) (int, error) {
+	return w.w.Write(b)
+}
+
+// START1 OMIT
+func Save(w io.Writer, doc *Document) error {
+	maxBytes := int64(1 * 1024 * 1042)                                                // 1MB
+	br := http.MaxBytesReader(RWriter{w: w}, ioutil.NopCloser(doc.Content), maxBytes) // HL
+	bw := bytes.NewBuffer([]byte{})                                                   // HL
+
+	_, err := io.Copy(bw, br) // HL
+	if err != nil {
+		return fmt.Errorf("document content too big: &gt; %dMB", maxBytes/1024/1024)
+	}
+
+	_, err = io.Copy(w, bw)
+	return err
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre contenteditable="true" spellcheck="false"><span num="51">    c, _ := ioutil.ReadFile("/usr/share/dict/words")</span>
+<span num="52">    fmt.Printf("Content size: ~ %dMB\n", len(c)/1024/1024)</span>
+<span num="53"></span>
+<span num="54">    doc := &amp;Document{Name: "Test", Content: bytes.NewBuffer(c)}</span>
+<span num="55">    <b>err := Save(ioutil.Discard, doc)</b></span>
+<span num="56"></span>
+<span num="57">    fmt.Fprintf(os.Stderr, "Error: %v\n", err)</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">30</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Mock a writer to always fail</h3>
+
+  <div class="code">
+
+
+<pre><span num="21"><b>type ErrorWriter struct{}</b></span>
+<span num="22"></span>
+<span num="23">func (w ErrorWriter) Write(b []byte) (int, error) {</span>
+<span num="24">    <b>return 0, fmt.Errorf("MOCK ERROR")</b></span>
+<span num="25">}</span>
+</pre>
+
+
+</div>
+
+  <div class="code playground" contenteditable="true" spellcheck="false">
+<pre style="display: none"><span>package main
+
+import (
+	"fmt"
+	"io"
+	"strings"
+)
+
+type Document struct {
+	Name    string
+	Content io.Reader
+}
+
+func Save(w io.Writer, doc *Document) error {
+	_, err := io.Copy(w, doc.Content) // HL
+	return err
+}
+
+// START1 OMIT
+
+type ErrorWriter struct{} // HL
+
+func (w ErrorWriter) Write(b []byte) (int, error) {
+	return 0, fmt.Errorf("MOCK ERROR") // HL
+}
+
+// END1 OMIT
+
+func main() {
+</span></pre>
+
+<pre contenteditable="true" spellcheck="false"><span num="31">    doc := &amp;Document{Name: "Test", Content: strings.NewReader("HELLO")}</span>
+<span num="32">    <b>err := Save(ErrorWriter{}, doc)</b></span>
+<span num="33"></span>
+<span num="34">    if err != nil {</span>
+<span num="35">        fmt.Printf("FAIL: %v\n", err)</span>
+<span num="36">    } else {</span>
+<span num="37">        fmt.Println("OK")</span>
+<span num="38">    }</span>
+</pre>
+
+<pre style="display: none"><span>}
+</span></pre>
+</div><div class="buttons"><button class="run">Run</button></div><div class="ui-resizable output" style="display: none;"><div class="ui-resizable-handle ui-resizable-n" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-w" style="z-index: 90; display: block;"></div><div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90; display: block;"></div><div class="buttons"><button class="run">Run</button><button class="kill">Kill</button><button class="close">Close</button></div><pre></pre></div>
+
+
+      <span class="pagenumber">31</span>
+      </article>
+
+
+
+      <article>
+
+        <h3>Conclusions</h3>
+
+  <ul>
+
+    <li>Interfaces allow to abstract away behaviour</li>
+
+    <li>io.Reader/Writer allows effective and efficient stream reading and writing</li>
+
+    <li>Implicit satisfaction allows interoperability, even between unrelated packages (eg.&nbsp;<code>Stringer</code>)</li>
+
+  </ul>
+
+
+      <span class="pagenumber">32</span>
+      </article>
+
+
+
+      <article>
+        <h3>Thank You</h3>
+        <h4><smal style="opacity: 0.5; display: inline-block; margin-bottom: 20px" l="">☛</smal> &nbsp;Questions, please!</h4>
+
+          <div class="presenter">
+
+
+  <p>
+    Karel Minařík
+  </p>
+
+
+          </div>
+
+          <div class="presenter">
+            <p class="link"><a href="http://karmi.cz/" target="_blank">http://karmi.cz</a></p><p class="link"><a href="http://twitter.com/karmiq" target="_blank">@karmiq</a></p>
+          </div>
+
+          <div class="presenter">
+
+
+  <p>
+
+  </p>
+
+
+          </div>
+
+      </article>
+
+    <div class="slide-area" id="prev-slide-area"></div><div class="slide-area" id="next-slide-area"></div></section>
+
+    <div id="help" style="display: none;">
+      Use the left and right arrow keys or click the left and right
+      edges of the page to navigate between slides.<br>
+      (Press 'H' or navigate to hide this message.)
+    </div>
+
+
+    <script src="./interface-files/play.js"></script>
+
+
+    <script>
+      (function() {
+
+        if (window["location"] && window["location"]["hostname"] == "talks.golang.org") {
+          var ga = document.createElement("script"); ga.type = "text/javascript"; ga.async = true;
+          ga.src = ("https:" == document.location.protocol ? "https://ssl" : "http://www") + ".google-analytics.com/ga.js";
+          var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ga, s);
+        }
+      })();
+    </script>
+
+
+<link rel="stylesheet" type="text/css" href="./interface-files/css"><link rel="stylesheet" type="text/css" href="./interface-files/styles.css"></body></html>
